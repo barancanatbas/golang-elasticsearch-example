@@ -13,8 +13,9 @@ type IProduct interface {
 	Get(ctx *context.Context) ([]product.Product, error)
 	Create(req requests.Create, ctx *context.Context) error
 	Update(req requests.Update, ctx *context.Context) error
-	Delete()
+	Delete(ctx *context.Context, id string) error
 	Gets(ctx *context.Context) ([]*product.Product, error)
+	Search(ctx *context.Context, param string) ([]*product.Product, error)
 }
 
 type ProductService struct {
@@ -58,6 +59,24 @@ func (p ProductService) Create(req requests.Create, ctx *context.Context) error 
 	return err
 }
 
+func (p ProductService) Search(ctx *context.Context, param string) ([]*product.Product, error) {
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"wildcard": map[string]interface{}{
+				"name": map[string]interface{}{
+					"value": "*" + param + "*",
+				},
+			},
+		},
+	}
+
+	datajson, _ := json.Marshal(&query)
+
+	value, err := p.Db.Search(datajson, ctx)
+
+	return value, err
+}
+
 func (p ProductService) Update(req requests.Update, ctx *context.Context) error {
 	product := product.Product{
 		Name:  req.Name,
@@ -73,6 +92,9 @@ func (p ProductService) Update(req requests.Update, ctx *context.Context) error 
 	return err
 }
 
-func (p ProductService) Delete() {
+func (p ProductService) Delete(ctx *context.Context, id string) error {
 
+	err := p.Db.Delete(id, ctx)
+
+	return err
 }

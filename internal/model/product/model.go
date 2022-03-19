@@ -14,8 +14,9 @@ type IProduct interface {
 	Get(products *[]Product, ctx *context.Context) error
 	Create(product []byte, id string, ctx *context.Context) error
 	Update(product string, id string, ctx *context.Context) error
-	Delete()
+	Delete(id string, ctx *context.Context) error
 	Gets(ctx *context.Context) ([]*Product, error)
+	Search(datajson []byte, ctx *context.Context) ([]*Product, error)
 }
 
 type Product struct {
@@ -95,7 +96,7 @@ func (p ModelProduct) Gets(ctx *context.Context) ([]*Product, error) {
 	return products, err
 }
 
-func (p ModelProduct) Search(ctx *context.Context) {
+func (p ModelProduct) Search(datajson []byte, ctx *context.Context) ([]*Product, error) {
 
 	// var buf bytes.Buffer
 	// query := map[string]interface{}{
@@ -111,6 +112,25 @@ func (p ModelProduct) Search(ctx *context.Context) {
 	// req := esapi.SearchRequest{
 	// 	Index: []string{"product"},
 	// }
+
+	req := esapi.SearchRequest{
+		Index: []string{"product"},
+		Body:  bytes.NewReader(datajson),
+	}
+
+	res, err := req.Do(*ctx, p.Elastic.Client)
+
+	var body productResponse
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+
+	products := make([]*Product, len(body.Hits.Hits))
+	for i, v := range body.Hits.Hits {
+		products[i] = v.Source
+	}
+
+	return products, err
 
 	// // Perform the search request.
 	// res, err := p.Elastic.Client.Search(
@@ -154,6 +174,15 @@ func (p ModelProduct) Update(product []byte, id string, ctx *context.Context) er
 	return err
 }
 
-func (p ModelProduct) Delete() {
+func (p ModelProduct) Delete(id string, ctx *context.Context) error {
 
+	req := esapi.DeleteRequest{
+		Index:      "product",
+		DocumentID: id,
+	}
+
+	res, err := req.Do(*ctx, p.Elastic.Client)
+	defer res.Body.Close()
+
+	return err
 }

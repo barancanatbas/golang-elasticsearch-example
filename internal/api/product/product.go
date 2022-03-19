@@ -17,6 +17,7 @@ func Init(r *gin.Engine, e *elasticsearch.ElasticSearch) {
 
 	r.GET("/product", handler.Get)
 	r.GET("/products", handler.Gets)
+	r.GET("/product/search", handler.Search)
 	r.POST("/product", handler.Create)
 	r.PUT("/product", handler.Update)
 	r.DELETE("/product/:id", handler.Delete)

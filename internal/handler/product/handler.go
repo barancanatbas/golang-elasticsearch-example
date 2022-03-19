@@ -15,6 +15,7 @@ type IProduct interface {
 	Delete(c *gin.Context)
 	Update(c *gin.Context)
 	Gets(c *gin.Context)
+	Search(c *gin.Context)
 }
 
 type HandlerProduct struct {
@@ -49,6 +50,18 @@ func (p HandlerProduct) Gets(c *gin.Context) {
 	c.JSON(200, response)
 }
 
+func (p HandlerProduct) Search(c *gin.Context) {
+	param := c.Query("key")
+	ctx := context.Background()
+	response, err := p.Servies.Search(&ctx, param)
+	if err != nil {
+		c.JSON(404, err.Error())
+		return
+	}
+
+	c.JSON(200, response)
+}
+
 func (p HandlerProduct) Create(c *gin.Context) {
 	ctx := context.Background()
 	var req requests.Create
@@ -67,7 +80,15 @@ func (p HandlerProduct) Create(c *gin.Context) {
 }
 
 func (p HandlerProduct) Delete(c *gin.Context) {
+	id := c.Param("id")
+	ctx := context.Background()
 
+	err := p.Servies.Delete(&ctx, id)
+	if err != nil {
+		c.JSON(404, err.Error())
+		return
+	}
+	c.JSON(200, "success!")
 }
 
 func (p HandlerProduct) Update(c *gin.Context) {
